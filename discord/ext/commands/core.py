@@ -97,7 +97,53 @@ class _CaseInsensitiveDict(dict):
     def __setitem__(self, k, v):
         super().__setitem__(k.lower(), v)
 
-class Command:
+class _CommandProxy():
+    def __init__(self, cls, **attrs):
+        self.__attrs = attrs
+        self.__name = attrs['callback'].__name__
+        self.__class_instance = cls(**attrs)
+        self.__cls = type("Proxy", (cls,), {"__getattr__": self.__getattr__})
+
+    def __getattr__(self, name):
+        return getattr(self.__class_instance, name)
+
+    def __setattr__(self, name, value):
+        if name in ["_CommandProxy__name", "_CommandProxy__attrs",
+                    "_CommandProxy__class_instance", "_CommandProxy__cls"]:
+            self.__dict__[name] = value
+        else:
+            setattr(self.__class_instance, name, value)
+
+    def __get__(self, instance, owner):
+        if instance is not None:
+            current = instance.__dict__.get(self.__name, None)
+            if current is not None:
+                print("warning instance lookup failed")
+                return current
+
+            cmd = self.__cls.__new__(self.__cls)
+            setattr(instance, self.__name, cmd)
+
+            cmd.instance = instance
+            if hasattr(cmd, 'all_commands'):
+                cmd.all_commands = type(cmd.all_commands)({
+                    k: getattr(instance, v.callback.__name__)
+                        for k, v in cmd.all_commands.items()
+                })
+
+            return cmd
+
+        return self.__class_instance
+
+class _CommandMeta(type):
+    # Pretend that _CommandProxy instances are of the __cls proxy class
+    def __instancecheck__(cls, instance):
+        if type(instance) == _CommandProxy:
+            return issubclass(instance._CommandProxy__cls, cls)
+        else:
+            return type.__instancecheck__(cls, instance)
+
+class Command(metaclass=_CommandMeta):
     """A class that implements the protocol for a bot text command.
 
     These are not created manually, instead they are created via the
@@ -203,11 +249,6 @@ class Command:
             await wrapped(ctx, error)
         finally:
             ctx.bot.dispatch('command_error', ctx, error)
-
-    def __get__(self, instance, owner):
-        if instance is not None:
-            self.instance = instance
-        return self
 
     async def do_conversion(self, ctx, converter, argument):
         if converter is bool:
@@ -1018,7 +1059,8 @@ def command(name=None, cls=None, **attrs):
 
         attrs['help'] = help_doc
         fname = name or func.__name__
-        return cls(name=fname, callback=func, checks=checks, cooldown=cooldown, **attrs)
+        return _CommandProxy(cls, name=fname, callback=func,
+                             checks=checks, cooldown=cooldown, **attrs)
 
     return decorator
 
