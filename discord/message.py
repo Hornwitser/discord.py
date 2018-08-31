@@ -204,7 +204,7 @@ class Message:
                  '_cs_clean_content', '_cs_raw_channel_mentions', 'nonce', 'pinned',
                  'role_mentions', '_cs_raw_role_mentions', 'type', 'call',
                  '_cs_system_content', '_cs_guild', '_state', 'reactions',
-                 'application', 'activity')
+                 'application', 'activity', '__weakref__')
 
     def __init__(self, *, state, channel, data):
         self._state = state
