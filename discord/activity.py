@@ -132,19 +132,20 @@ class Activity(_ActivityTag):
     __slots__ = ('state', 'details', 'timestamps', 'assets', 'party',
                  'flags', 'sync_id', 'session_id', 'type', 'name', 'url', 'application_id')
 
-    def __init__(self, **kwargs):
-        self.state = kwargs.pop('state', None)
-        self.details = kwargs.pop('details', None)
-        self.timestamps = kwargs.pop('timestamps', {})
-        self.assets = kwargs.pop('assets', {})
-        self.party = kwargs.pop('party', {})
-        self.application_id = kwargs.pop('application_id', None)
-        self.name = kwargs.pop('name', None)
-        self.url = kwargs.pop('url', None)
-        self.flags = kwargs.pop('flags', 0)
-        self.sync_id = kwargs.pop('sync_id', None)
-        self.session_id = kwargs.pop('session_id', None)
-        self.type = try_enum(ActivityType, kwargs.pop('type', -1))
+    def __init__(self, *, state=None, details=None, timestamps={}, assets={}, party={}, application_id=None,
+                 name=None, url=None, flags=0, sync_id=None, session_id=None, **extra):
+        self.state = state
+        self.details = details
+        self.timestamps = timestamps
+        self.assets = assets
+        self.party = party
+        self.application_id = application_id
+        self.name = name
+        self.url = url
+        self.flags = flags
+        self.sync_id = sync_id
+        self.session_id = session_id
+        self.type = try_enum(ActivityType, extra.pop('type', -1))
 
     def to_dict(self):
         ret = {}
@@ -252,25 +253,16 @@ class Game(_ActivityTag):
 
     __slots__ = ('name', '_end', '_start')
 
-    def __init__(self, name, **extra):
+    def __init__(self, name, *, start=None, end=None, timestamps={}, **extra):
         self.name = name
 
-        try:
-            timestamps = extra['timestamps']
-        except KeyError:
-            self._extract_timestamp(extra, 'start')
-            self._extract_timestamp(extra, 'end')
-        else:
+        if start is None and end is None:
             self._start = timestamps.get('start', 0)
             self._end = timestamps.get('end', 0)
 
-    def _extract_timestamp(self, data, key):
-        try:
-            dt = data[key]
-        except KeyError:
-            setattr(self, '_' + key, 0)
         else:
-            setattr(self, '_' + key, dt.timestamp() * 1000.0)
+            self._start = 0 if start is None else start.timestamp() * 1000.0
+            self._end = 0 if end is None else end.timestamp() * 1000.0
 
     @property
     def type(self):
@@ -361,11 +353,11 @@ class Streaming(_ActivityTag):
 
     __slots__ = ('name', 'url', 'details', 'assets')
 
-    def __init__(self, *, name, url, **extra):
+    def __init__(self, *, name, url, details=None, assets={}, **extra):
         self.name = name
         self.url = url
-        self.details = extra.pop('details', None)
-        self.assets = extra.pop('assets', {})
+        self.details = details
+        self.assets = assets
 
     @property
     def type(self):
@@ -441,14 +433,15 @@ class Spotify:
 
     __slots__ = ('_state', '_details', '_timestamps', '_assets', '_party', '_sync_id', '_session_id')
 
-    def __init__(self, **data):
-        self._state = data.pop('state', None)
-        self._details = data.pop('details', None)
-        self._timestamps = data.pop('timestamps', {})
-        self._assets = data.pop('assets', {})
-        self._party = data.pop('party', {})
-        self._sync_id = data.pop('sync_id')
-        self._session_id = data.pop('session_id')
+    def __init__(self, state=None, details=None, timestamps=None, assets=None,
+                 party=None, sync_id=None, session_id = None, **extra):
+        self._state = state
+        self._details = details
+        self._timestamps = timestamps
+        self._assets = assets
+        self._party = party
+        self._sync_id = sync_id
+        self._session_id = session_id
 
     @property
     def type(self):
