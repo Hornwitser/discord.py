@@ -393,11 +393,9 @@ class DiscordWebSocket(websockets.client.WebSocketClientProtocol):
             log.info('Shard ID %s has successfully RESUMED session %s under trace %s.',
                      self.shard_id, self.session_id, ', '.join(trace))
 
-        parser = 'parse_' + event.lower()
-
         try:
-            func = getattr(self._connection, parser)
-        except AttributeError:
+            func = self._connection._parsers[event]
+        except KeyError:
             log.warning('Unknown event %s.', event)
         else:
             func(data)

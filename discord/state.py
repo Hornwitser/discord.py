@@ -71,6 +71,51 @@ class ConnectionState:
         self.heartbeat_timeout = options.get('heartbeat_timeout', 60.0)
         self._listeners = []
 
+        self._parsers = {
+            'READY': self.parse_ready,
+            'RESUMED': self.parse_resumed,
+
+            'GUILD_BAN_ADD': self.parse_guild_ban_add,
+            'GUILD_BAN_REMOVE': self.parse_guild_ban_remove,
+            'GUILD_CREATE': self.parse_guild_create,
+            'GUILD_DELETE': self.parse_guild_delete,
+            'GUILD_EMOJIS_UPDATE': self.parse_guild_emojis_update,
+            'GUILD_MEMBER_ADD': self.parse_guild_member_add,
+            'GUILD_MEMBER_REMOVE': self.parse_guild_member_remove,
+            'GUILD_MEMBER_UPDATE': self.parse_guild_member_update,
+            'GUILD_MEMBERS_CHUNK': self.parse_guild_members_chunk,
+            'GUILD_ROLE_CREATE': self.parse_guild_role_create,
+            'GUILD_ROLE_DELETE': self.parse_guild_role_delete,
+            'GUILD_ROLE_UPDATE': self.parse_guild_role_update,
+            'GUILD_SYNC': self.parse_guild_sync,
+            'GUILD_UPDATE': self.parse_guild_update,
+
+            'CHANNEL_CREATE': self.parse_channel_create,
+            'CHANNEL_DELETE': self.parse_channel_delete,
+            'CHANNEL_PINS_UPDATE': self.parse_channel_pins_update,
+            'CHANNEL_RECIPIENT_ADD': self.parse_channel_recipient_add,
+            'CHANNEL_RECIPIENT_REMOVE': self.parse_channel_recipient_remove,
+            'CHANNEL_UPDATE': self.parse_channel_update,
+
+            'MESSAGE_CREATE': self.parse_message_create,
+            'MESSAGE_DELETE': self.parse_message_delete,
+            'MESSAGE_DELETE_BULK': self.parse_message_delete_bulk,
+            'MESSAGE_REACTION_ADD': self.parse_message_reaction_add,
+            'MESSAGE_REACTION_REMOVE': self.parse_message_reaction_remove,
+            'MESSAGE_REACTION_REMOVE_ALL': self.parse_message_reaction_remove_all,
+            'MESSAGE_UPDATE': self.parse_message_update,
+
+            'RELATIONSHIP_ADD': self.parse_relationship_add,
+            'RELATIONSHIP_REMOVE': self.parse_relationship_remove,
+
+            'PRESENCE_UPDATE': self.parse_presence_update,
+            'TYPING_START': self.parse_typing_start,
+            'USER_UPDATE': self.parse_user_update,
+            'VOICE_SERVER_UPDATE': self.parse_voice_server_update,
+            'VOICE_STATE_UPDATE': self.parse_voice_state_update,
+        }
+
+
         activity = options.get('activity', None)
         if activity:
             if not isinstance(activity, _ActivityTag):
