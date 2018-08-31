@@ -241,7 +241,4 @@ def try_enum(cls, val):
 
     If it fails it returns the value instead.
     """
-    try:
-        return cls(val)
-    except ValueError:
-        return val
+    return cls._value2member_map_.get(val, val)
