@@ -103,6 +103,7 @@ class ConnectionState:
         # extra dict to look up private channels by user id
         self._private_channels_by_user = {}
         self._messages = deque(maxlen=self.max_messages)
+        self._messages_by_id = weakref.WeakValueDictionary()
 
     def process_listeners(self, listener_type, argument, result):
         removed = []
@@ -242,9 +243,6 @@ class ConnectionState:
         if isinstance(channel, DMChannel):
             self._private_channels_by_user.pop(channel.recipient.id, None)
 
-    def _get_message(self, msg_id):
-        return utils.find(lambda m: m.id == msg_id, self._messages)
-
     def _add_guild_from_data(self, guild):
         guild = Guild(data=guild, state=self)
         self._add_guild(guild)
@@ -361,15 +359,17 @@ class ConnectionState:
         message = Message(channel=channel, data=data, state=self)
         self.dispatch('message', message)
         self._messages.append(message)
+        self._messages_by_id[message.id] = message
 
     def parse_message_delete(self, data):
         raw = RawMessageDeleteEvent(data)
         self.dispatch('raw_message_delete', raw)
 
-        found = self._get_message(raw.message_id)
+        found = self._messages_by_id.get(raw.message_id)
         if found is not None:
             self.dispatch('message_delete', found)
             self._messages.remove(found)
+            del self._messages_by_id[found.id]
 
     def parse_message_delete_bulk(self, data):
         raw = RawBulkMessageDeleteEvent(data)
@@ -379,11 +379,12 @@ class ConnectionState:
         for msg in to_be_deleted:
             self.dispatch('message_delete', msg)
             self._messages.remove(msg)
+            del self._messages_by_id[msg.id]
 
     def parse_message_update(self, data):
         raw = RawMessageUpdateEvent(data)
         self.dispatch('raw_message_edit', raw)
-        message = self._get_message(raw.message_id)
+        message = self._messages_by_id.get(raw.message_id)
         if message is not None:
             older_message = copy.copy(message)
             if 'call' in data:
@@ -405,7 +406,7 @@ class ConnectionState:
         self.dispatch('raw_reaction_add', raw)
 
         # rich interface here
-        message = self._get_message(raw.message_id)
+        message = self._messages_by_id.get(raw.message_id)
         if message is not None:
             emoji = self._upgrade_partial_emoji(emoji)
             reaction = message._add_reaction(data, emoji, raw.user_id)
@@ -417,7 +418,7 @@ class ConnectionState:
         raw = RawReactionClearEvent(data)
         self.dispatch('raw_reaction_clear', raw)
 
-        message = self._get_message(raw.message_id)
+        message = self._messages_by_id.get(raw.message_id)
         if message is not None:
             old_reactions = message.reactions.copy()
             message.reactions.clear()
@@ -430,7 +431,7 @@ class ConnectionState:
         raw = RawReactionActionEvent(data, emoji)
         self.dispatch('raw_reaction_remove', raw)
 
-        message = self._get_message(raw.message_id)
+        message = self._messages_by_id.get(raw.message_id)
         if message is not None:
             emoji = self._upgrade_partial_emoji(emoji)
             try:
