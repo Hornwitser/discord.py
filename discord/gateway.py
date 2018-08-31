@@ -332,9 +332,19 @@ class DiscordWebSocket(websockets.client.WebSocketClientProtocol):
         log.debug('For Shard ID %s: WebSocket Event: %s', self.shard_id, msg)
         self._dispatch('socket_response', msg)
 
-        op = msg.get('op')
-        data = msg.get('d')
-        seq = msg.get('s')
+        try:
+            op = msg['op']
+            data = msg['d']
+            seq = msg['s']
+            event = msg['t']
+
+        except KeyError:
+            log.warning('Malformed WebSocket Event: %s.', msg)
+            op = msg.get('op')
+            data = msg.get('d')
+            seq = msg.get('s')
+            event = msg.get('t')
+
         if seq is not None:
             self.sequence = seq
 
@@ -379,11 +389,8 @@ class DiscordWebSocket(websockets.client.WebSocketClientProtocol):
             log.warning('Unknown OP code %s.', op)
             return
 
-        event = msg.get('t')
-
         if event == 'READY':
             self._trace = trace = data.get('_trace', [])
-            self.sequence = msg['s']
             self.session_id = data['session_id']
             log.info('Shard ID %s has connected to Gateway: %s (Session ID: %s).',
                      self.shard_id, ', '.join(trace), self.session_id)
