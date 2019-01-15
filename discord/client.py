@@ -107,6 +107,12 @@ class Client:
         WebSocket in the case of not receiving a HEARTBEAT_ACK. Useful if
         processing the initial packets take too long to the point of disconnecting
         you. The default timeout is 60 seconds.
+    debug: :class:`bool`
+        Whether to log and dispatch debugging related events.  This affects the
+        :func:`on_socket_raw_receive` event, and debug logging of dispatched events.
+
+        Defaults to ``False`` as it's computationally expensive to do so and most
+        bots do use these debug events.
 
     Attributes
     -----------
@@ -121,6 +127,7 @@ class Client:
         self._listeners = {}
         self.shard_id = options.get('shard_id')
         self.shard_count = options.get('shard_count')
+        self.debug = options.get('debug', False)
 
         connector = options.pop('connector', None)
         proxy = options.pop('proxy', None)
@@ -234,7 +241,8 @@ class Client:
                 pass
 
     def dispatch(self, event, *args, **kwargs):
-        log.debug('Dispatching event %s', event)
+        if self.debug:
+            log.debug('Dispatching event %s', event)
         method = 'on_' + event
 
         listeners = self._listeners.get(event)

@@ -212,6 +212,7 @@ class DiscordWebSocket(websockets.client.WebSocketClientProtocol):
         ws.token = client.http.token
         ws._connection = client._connection
         ws._dispatch = client.dispatch
+        ws.debug = client.debug
         ws.gateway = gateway
         ws.shard_id = shard_id
         ws.shard_count = client._connection.shard_count
@@ -330,11 +331,13 @@ class DiscordWebSocket(websockets.client.WebSocketClientProtocol):
             else:
                 return
 
-        self._dispatch('socket_raw_receive', msg)
+        if self.debug:
+            self._dispatch('socket_raw_receive', msg)
+            log.debug(
+                'For Shard ID %s: WebSocket Event: %s', self.shard_id, msg
+            )
 
         msg = json.loads(msg)
-
-        log.debug('For Shard ID %s: WebSocket Event: %s', self.shard_id, msg)
 
         try:
             op = msg['op']

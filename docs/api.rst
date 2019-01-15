@@ -158,6 +158,11 @@ to handle it, which defaults to print a traceback and ignoring the exception.
 
     .. note::
 
+        The :attr:`Client.debug` attribute must be set to ``true``\,
+        otherwise this event is not called.
+
+    .. note::
+
         This is only for the messages received from the client
         WebSocket. The voice WebSocket will not trigger this event.
 
