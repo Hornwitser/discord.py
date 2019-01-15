@@ -150,9 +150,8 @@ to handle it, which defaults to print a traceback and ignoring the exception.
 
 .. function:: on_socket_raw_receive(msg)
 
-    Called whenever a message is received from the WebSocket, before
-    it's processed. This event is always dispatched when a message is
-    received and the passed data is not processed in any way.
+    Called whenever a complete message is received from the WebSocket,
+    after decompression has occured
 
     This is only really useful for grabbing the WebSocket stream and
     debugging purposes.
@@ -162,9 +161,9 @@ to handle it, which defaults to print a traceback and ignoring the exception.
         This is only for the messages received from the client
         WebSocket. The voice WebSocket will not trigger this event.
 
-    :param msg: The message passed in from the WebSocket library.
-                Could be :class:`bytes` for a binary message or :class:`str`
-                for a regular message.
+    :param msg: The message passed in from the WebSocket library after
+                decompression has occured.  Usually a :class:`str`
+                containing json data.
 
 .. function:: on_socket_raw_send(payload)
 
