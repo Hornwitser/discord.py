@@ -141,6 +141,7 @@ class Client:
         self._connection = ConnectionState(dispatch=self.dispatch, chunker=self._chunker, handlers=self._handlers,
                                            syncer=self._syncer, http=self.http, loop=self.loop, **options)
 
+        self._events = {}
         self._connection.shard_count = self.shard_count
         self._closed = asyncio.Event(loop=self.loop)
         self._ready = asyncio.Event(loop=self.loop)
@@ -243,7 +244,6 @@ class Client:
     def dispatch(self, event, *args, **kwargs):
         if self.debug:
             log.debug('Dispatching event %s', event)
-        method = 'on_' + event
 
         listeners = self._listeners.get(event)
         if listeners:
@@ -275,11 +275,13 @@ class Client:
                     del listeners[idx]
 
         try:
-            coro = getattr(self, method)
-        except AttributeError:
-            pass
-        else:
-            asyncio.ensure_future(self._run_event(coro, method, *args, **kwargs), loop=self.loop)
+            coro = self._events[event]
+        except KeyError:
+            coro = getattr(self, 'on_' + event, None)
+            self._events[event] = coro
+
+        if coro is not None:
+            asyncio.ensure_future(self._run_event(coro, 'on_' + event, *args, **kwargs), loop=self.loop)
 
     async def on_error(self, event_method, *args, **kwargs):
         """|coro|
