@@ -335,7 +335,6 @@ class DiscordWebSocket(websockets.client.WebSocketClientProtocol):
         msg = json.loads(msg)
 
         log.debug('For Shard ID %s: WebSocket Event: %s', self.shard_id, msg)
-        self._dispatch('socket_response', msg)
 
         try:
             op = msg['op']
