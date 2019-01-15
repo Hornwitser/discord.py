@@ -40,6 +40,11 @@ from . import utils
 from .activity import _ActivityTag
 from .errors import ConnectionClosed, InvalidArgument
 
+try:
+    import ujson as json
+except ImportError:
+    pass
+
 log = logging.getLogger(__name__)
 
 __all__ = ['DiscordWebSocket', 'KeepAliveHandler', 'VoiceKeepAliveHandler',
