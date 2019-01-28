@@ -234,7 +234,8 @@ class Client:
                 pass
 
     def dispatch(self, event, *args, **kwargs):
-        log.debug('Dispatching event %s', event)
+        if __debug__:
+            log.debug('Dispatching event %s', event)
         method = 'on_' + event
 
         listeners = self._listeners.get(event)

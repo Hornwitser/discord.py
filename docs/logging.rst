@@ -38,7 +38,10 @@ This is recommended, especially at verbose levels such as ``INFO``,
 and ``DEBUG`` as there are a lot of events logged and it would clog the
 stdout of your program.
 
+.. note::
 
+    Some ``DEBUG`` level events are not logged when optimization is
+    enabled (the ``-O`` flag on the python commandline.)
 
 For more information, check the documentation and tutorial of the
 :mod:`logging` module.
